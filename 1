@@ -1,0 +1,123 @@
+using System;
+using System.Data.SqlClient;
+using System.Windows.Forms;
+
+namespace UserAuthenticationApp
+{
+    public partial class LoginForm : Form
+    {
+        private const string connectionString = "Data Source=YourServer;Initial Catalog=YourDatabase;Integrated Security=True";
+
+        public LoginForm()
+        {
+            InitializeComponent();
+        }
+
+        private void loginButton_Click(object sender, EventArgs e)
+        {
+            string username = usernameTextBox.Text;
+            string password = passwordTextBox.Text;
+
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            {
+                MessageBox.Show("Please enter both username and password.");
+                return;
+            }
+
+            if (AuthenticateUser(username, password))
+            {
+                MessageBox.Show("Login successful!");
+            }
+            else
+            {
+                MessageBox.Show("Invalid username or password.");
+            }
+        }
+
+        private bool AuthenticateUser(string username, string password)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT * FROM Users WHERE Username = @Username AND Password = @Password";
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Username", username);
+                command.Parameters.AddWithValue("@Password", password);
+
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    reader.Close();
+                    return true;
+                }
+                else
+                {
+                    reader.Close();
+                    return false;
+                }
+            }
+        }
+
+        private void registerLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            RegistrationForm registrationForm = new RegistrationForm();
+            registrationForm.ShowDialog();
+        }
+    }
+
+    public partial class RegistrationForm : Form
+    {
+        private const string connectionString = "Data Source=YourServer;Initial Catalog=YourDatabase;Integrated Security=True";
+
+        public RegistrationForm()
+        {
+            InitializeComponent();
+        }
+
+        private void registerButton_Click(object sender, EventArgs e)
+        {
+            string username = regUsernameTextBox.Text;
+            string password = regPasswordTextBox.Text;
+
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            {
+                MessageBox.Show("Please enter both username and password.");
+                return;
+            }
+
+            if (RegisterUser(username, password))
+            {
+                MessageBox.Show("Registration successful!");
+                this.Close();
+            }
+            else
+            {
+                MessageBox.Show("Failed to register. Username may already exist.");
+            }
+        }
+
+        private bool RegisterUser(string username, string password)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string query = "INSERT INTO Users (Username, Password) VALUES (@Username, @Password)";
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Username", username);
+                command.Parameters.AddWithValue("@Password", password);
+
+                connection.Open();
+                int rowsAffected = command.ExecuteNonQuery();
+
+                if (rowsAffected > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+    }
+}
